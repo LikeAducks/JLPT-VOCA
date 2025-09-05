@@ -34,6 +34,10 @@
             transition: transform 0.2s ease-out;
             transform: translateX(-60px);
         }
+        .word-item.swiping-right {
+            transition: transform 0.2s ease-out;
+            transform: translateX(60px);
+        }
         .word-item.is-wrong-note {
             background-color: #fed7aa; /* Tailwind orange-200 */
         }
@@ -41,7 +45,6 @@
         /* Test item specific styles */
         .test-item-content .notation { display: none; }
         .test-item-content.revealed .notation { display: inline; }
-        .test-item-content.revealed .placeholder { display: none; }
     </style>
 </head>
 <body class="bg-slate-50 text-slate-800">
@@ -129,7 +132,7 @@
                 <h2 id="test-list-title" class="text-xl font-bold mx-auto pr-8">테스트</h2>
             </header>
             <div class="p-4 w-full">
-                <p class="text-center text-slate-500 bg-slate-100 p-3 rounded-lg mb-4">단어를 클릭해서 정답 확인, 밀어서 오답노트 관리</p>
+                <p class="text-center text-slate-500 bg-slate-100 p-3 rounded-lg mb-4">단어를 클릭해서 정답 확인, 좌/우로 밀어서 오답노트 관리</p>
                 <div id="test-list-container" class="space-y-2">
                     <!-- Test words will be dynamically generated here -->
                 </div>
@@ -331,9 +334,8 @@
             const container = document.getElementById('memorize-list-container');
             let wordsToShow;
             let title;
-            let isWrongNoteMode = (level === 'wrong-note');
 
-            if (isWrongNoteMode) {
+            if (level === 'wrong-note') {
                 title = `오답노트 (${start + 1} - ${Math.min(end + 1, state.wrongWords.length)})`;
                 wordsToShow = state.wrongWords.slice(start, end + 1);
             } else {
@@ -353,12 +355,12 @@
 
             container.querySelectorAll('.word-item').forEach(el => {
                 const word = wordsToShow.find(w => w.id === el.dataset.wordId);
-                if (word) addSwipeListener(el, word, isWrongNoteMode);
+                if (word) addSwipeListener(el, word);
             });
             showScreen('memorize-word-list-screen');
         }
 
-        // --- Test Logic (FIXED) ---
+        // --- Test Logic ---
         function setupTestRangeScreen(level) {
             const title = document.getElementById('test-range-title');
             const startLabel = document.getElementById('start-range-label');
@@ -417,21 +419,19 @@
             document.getElementById('test-list-title').textContent = title;
             container.innerHTML = words.length ? words.map(word => {
                 const isWrong = state.wrongWords.some(w => w.id === word.id);
+                const wrongNoteClass = (isWrong && !isWrongNoteTest) ? 'is-wrong-note' : '';
                  return `
-                <div class="word-item test-item-content p-4 bg-white border rounded-lg shadow-sm cursor-pointer ${isWrong ? 'is-wrong-note' : ''}" data-word-id="${word.id}">
+                <div class="word-item test-item-content p-4 bg-white border rounded-lg shadow-sm cursor-pointer ${wrongNoteClass}" data-word-id="${word.id}">
                     <span class="text-slate-700">${word.meaning}</span>
                     <span class="notation text-sky-800 font-medium">${word.notation}</span>
-                    <span class="placeholder text-slate-400">[클릭하여 정답 확인]</span>
                 </div>`
             }).join('') : '<p class="text-center text-slate-500">테스트할 단어가 없습니다.</p>';
 
             container.querySelectorAll('.test-item-content').forEach(el => {
                 el.addEventListener('click', () => el.classList.toggle('revealed'));
                 
-                if (!isWrongNoteTest) {
-                    const word = words.find(w => w.id === el.dataset.wordId);
-                    if (word) addSwipeListener(el, word);
-                }
+                const word = words.find(w => w.id === el.dataset.wordId);
+                if (word) addSwipeListener(el, word);
             });
             showScreen('test-word-list-screen');
         }
@@ -450,18 +450,20 @@
                 if (touchstartX === 0 || isProcessing) return;
                 let deltaX = e.changedTouches[0].screenX - touchstartX;
                 
-                if (deltaX < -50) { // Swipe left
+                if (Math.abs(deltaX) > 50) { // Swipe left or right
                     isProcessing = true;
                     touchstartX = 0; // Prevent re-triggering
+
+                    const swipeClass = deltaX < 0 ? 'swiping' : 'swiping-right';
 
                     const isCurrentlyWrong = element.classList.toggle('is-wrong-note');
                     state.pendingWrongWordChanges[word.id] = isCurrentlyWrong ? 'add' : 'remove';
 
-                    element.classList.add('swiping');
+                    element.classList.add(swipeClass);
                     setTimeout(() => {
-                        element.classList.remove('swiping');
+                        element.classList.remove(swipeClass);
                         setTimeout(() => { isProcessing = false; }, 300); 
-                    }, 200); // <-- UPDATED from 1000 to 200
+                    }, 200);
                 }
             }, { passive: true });
 
