@@ -50,7 +50,7 @@
         
         <!-- Loading Screen -->
         <div id="loading-screen" class="screen active flex-col justify-center items-center p-6 min-h-screen">
-            <svg class="animate-spin h-10 w-10 text-sky-600 mb-4" xmlns="http://www.w.org/2000/svg" fill="none" viewBox="0 0 24 24">
+            <svg class="animate-spin h-10 w-10 text-sky-600 mb-4" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
                 <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
                 <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
             </svg>
@@ -73,7 +73,7 @@
         <!-- Memorize: Level Select Screen -->
         <div id="memorize-select-screen" class="screen flex-col p-4 min-h-screen">
             <header class="flex items-center mb-4 sticky top-0 bg-white py-2 z-10">
-                <button class="back-btn p-2 rounded-full hover:bg-slate-100" data-target="main-screen"><svg xmlns="http://www.w.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7" /></svg></button>
+                <button class="back-btn p-2 rounded-full hover:bg-slate-100" data-target="main-screen"><svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7" /></svg></button>
                 <h2 class="text-xl font-bold mx-auto pr-8">암기하기</h2>
             </header>
             <div class="space-y-2">
@@ -84,7 +84,7 @@
         <!-- Memorize: Word List Screen -->
         <div id="memorize-word-list-screen" class="screen flex-col min-h-screen">
             <header class="flex items-center p-4 sticky top-0 bg-white shadow-sm z-10">
-                <button class="back-btn p-2 rounded-full hover:bg-slate-100" data-target="memorize-select-screen"><svg xmlns="http://www.w.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7" /></svg></button>
+                <button class="back-btn p-2 rounded-full hover:bg-slate-100" data-target="memorize-select-screen"><svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7" /></svg></button>
                 <h2 id="word-list-title" class="text-xl font-bold mx-auto pr-8"></h2>
             </header>
             <div class="flex-grow p-4 space-y-2" id="memorize-list-container">
@@ -95,7 +95,7 @@
         <!-- Test: Level Select Screen -->
         <div id="test-select-screen" class="screen flex-col p-4 min-h-screen">
             <header class="flex items-center mb-4 sticky top-0 bg-white py-2">
-                <button class="back-btn p-2 rounded-full hover:bg-slate-100" data-target="main-screen"><svg xmlns="http://www.w.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7" /></svg></button>
+                <button class="back-btn p-2 rounded-full hover:bg-slate-100" data-target="main-screen"><svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7" /></svg></button>
                 <h2 class="text-xl font-bold mx-auto pr-8">테스트 레벨 선택</h2>
             </header>
             <div id="test-level-grid" class="grid grid-cols-2 gap-4 text-center">
@@ -106,7 +106,7 @@
         <!-- Test: Range Select Screen -->
         <div id="test-range-select-screen" class="screen flex-col p-4 min-h-screen">
              <header class="flex items-center mb-4 sticky top-0 bg-white py-2">
-                <button class="back-btn p-2 rounded-full hover:bg-slate-100" data-target="test-select-screen"><svg xmlns="http://www.w.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7" /></svg></button>
+                <button class="back-btn p-2 rounded-full hover:bg-slate-100" data-target="test-select-screen"><svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7" /></svg></button>
                 <h2 id="test-range-title" class="text-xl font-bold mx-auto pr-8">테스트 범위 설정</h2>
             </header>
             <div class="flex-grow flex flex-col justify-center items-center px-4 space-y-6">
@@ -277,7 +277,8 @@
                 if (action === 'add' && !wordExists) {
                     const [level, ...meaningParts] = wordId.split('-');
                     const meaning = meaningParts.join('-');
-                    const word = state.words[level.toLowerCase()].find(w => w.meaning === meaning);
+                    const wordSource = state.words[level.toLowerCase()] || [];
+                    const word = wordSource.find(w => w.meaning === meaning);
                     if (word) state.wrongWords.push(word);
                     changed = true;
                 } else if (action === 'remove' && wordExists) {
@@ -301,19 +302,23 @@
             }));
 
             memorizeSelectContainer.addEventListener('click', e => {
-                if (e.target.matches('.memorize-day-btn')) {
-                    const { level, day } = e.target.dataset;
+                const target = e.target.closest('button');
+                if (!target) return;
+
+                if (target.matches('.memorize-day-btn')) {
+                    const { level, day } = target.dataset;
                     showMemorizeWords(level, day);
                 }
-                if (e.target.matches('.memorize-wrong-btn')) {
-                    const { start, end } = e.target.dataset;
+                if (target.matches('.memorize-wrong-btn')) {
+                    const { start, end } = target.dataset;
                     showMemorizeWords('wrong-note', null, parseInt(start), parseInt(end));
                 }
             });
 
             testLevelGrid.addEventListener('click', e => {
-                if(e.target.matches('.test-level-btn')) {
-                    currentTestLevel = e.target.dataset.level;
+                 const target = e.target.closest('button');
+                 if(target && target.matches('.test-level-btn')) {
+                    currentTestLevel = target.dataset.level;
                     setupTestRangeScreen(currentTestLevel);
                     showScreen('test-range-select-screen');
                 }
@@ -353,12 +358,58 @@
             showScreen('memorize-word-list-screen');
         }
 
+        // --- Test Logic (FIXED) ---
         function setupTestRangeScreen(level) {
-            // ... (No changes here)
+            const title = document.getElementById('test-range-title');
+            const startLabel = document.getElementById('start-range-label');
+            const endLabel = document.getElementById('end-range-label');
+            const startInput = document.getElementById('start-range');
+            const endInput = document.getElementById('end-range');
+
+            if (level === 'wrong-note') {
+                title.textContent = '오답노트 범위 설정';
+                startLabel.textContent = '시작 번호';
+                endLabel.textContent = '끝 번호';
+                startInput.value = 1;
+                endInput.value = state.wrongWords.length;
+            } else {
+                title.textContent = `${level.toUpperCase()} 테스트 범위`;
+                startLabel.textContent = '시작 일차';
+                endLabel.textContent = '끝 일차';
+                startInput.value = 1;
+                endInput.value = DAYS_PER_LEVEL;
+            }
         }
 
         function handleStartTest() {
-            // ... (No changes here)
+            const startRange = parseInt(document.getElementById('start-range').value) || 1;
+            const endRange = parseInt(document.getElementById('end-range').value) || 1;
+            
+            let wordsToTest = [];
+            let testTitle = '';
+            let isWrongNoteTest = (currentTestLevel === 'wrong-note');
+
+            if (isWrongNoteTest) {
+                testTitle = `오답노트 테스트 (${startRange} - ${endRange})`;
+                wordsToTest = state.wrongWords.slice(startRange - 1, endRange);
+            } else {
+                testTitle = `${currentTestLevel.toUpperCase()} 테스트 (${startRange} - ${endRange}일차)`;
+                const targetWords = state.words[currentTestLevel];
+                if(targetWords) {
+                    wordsToTest = targetWords.filter(word => {
+                        const day = parseInt(word.day);
+                        return day >= startRange && day <= endRange;
+                    });
+                }
+            }
+
+            // Shuffle words
+            for (let i = wordsToTest.length - 1; i > 0; i--) {
+                const j = Math.floor(Math.random() * (i + 1));
+                [wordsToTest[i], wordsToTest[j]] = [wordsToTest[j], wordsToTest[i]];
+            }
+            
+            displayTestWords(wordsToTest, testTitle, isWrongNoteTest);
         }
 
         function displayTestWords(words, title, isWrongNoteTest) {
@@ -379,13 +430,13 @@
                 
                 if (!isWrongNoteTest) {
                     const word = words.find(w => w.id === el.dataset.wordId);
-                    if (word) addSwipeListener(el, word, false);
+                    if (word) addSwipeListener(el, word);
                 }
             });
             showScreen('test-word-list-screen');
         }
 
-        // --- Swipe Logic ---
+        // --- Swipe Logic (UPDATED) ---
         function addSwipeListener(element, word) {
             let touchstartX = 0;
             let isProcessing = false;
@@ -403,16 +454,14 @@
                     isProcessing = true;
                     touchstartX = 0; // Prevent re-triggering
 
-                    // Toggle wrong note status
                     const isCurrentlyWrong = element.classList.toggle('is-wrong-note');
                     state.pendingWrongWordChanges[word.id] = isCurrentlyWrong ? 'add' : 'remove';
 
-                    // Animate
                     element.classList.add('swiping');
                     setTimeout(() => {
                         element.classList.remove('swiping');
-                        setTimeout(() => { isProcessing = false; }, 300); // Cooldown to prevent immediate re-swipe
-                    }, 1000);
+                        setTimeout(() => { isProcessing = false; }, 300); 
+                    }, 200); // <-- UPDATED from 1000 to 200
                 }
             }, { passive: true });
 
