@@ -1,0 +1,422 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <title>JLPT 단어 암기장</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;500;700&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Noto Sans KR', sans-serif;
+            -webkit-tap-highlight-color: transparent;
+        }
+        .screen { display: none; animation: fadeIn 0.3s ease-in-out; }
+        .screen.active { display: flex; }
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        /* 아코디언 (접기/펴기) 스타일 */
+        details > summary { list-style: none; }
+        details > summary::-webkit-details-marker { display: none; }
+        details .icon { transition: transform 0.2s; }
+        details[open] .icon { transform: rotate(90deg); }
+        
+        /* 단어 스와이프 & 클릭 인터랙션 */
+        .word-item {
+            transition: transform 0.3s ease, background-color 0.3s ease;
+            position: relative;
+        }
+        .word-item.swiped {
+            transform: translateX(-60px);
+            transition: transform 0.2s ease-out;
+        }
+        .test-item-content .notation { display: none; }
+        .test-item-content.revealed .notation { display: inline; }
+        .test-item-content.revealed .placeholder { display: none; }
+    </style>
+</head>
+<body class="bg-slate-50 text-slate-800">
+
+    <div id="app-container" class="max-w-xl mx-auto min-h-screen bg-white shadow-lg">
+        
+        <!-- 로딩 화면 -->
+        <div id="loading-screen" class="screen active flex-col justify-center items-center p-6 min-h-screen">
+            <svg class="animate-spin h-10 w-10 text-sky-600 mb-4" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+            </svg>
+            <h1 class="text-xl font-bold text-sky-700">단어장 로딩 중...</h1>
+            <p class="text-slate-500 mt-2">N5, N4, N3 단어를 준비하고 있어요.</p>
+        </div>
+
+        <!-- 메인 화면 -->
+        <div id="main-screen" class="screen flex-col justify-center items-center p-6 min-h-screen space-y-6">
+            <div class="text-center">
+                <h1 class="text-4xl font-bold text-sky-700">JLPT 단어장</h1>
+                <p class="text-slate-500 mt-2">암기 또는 테스트를 선택하세요.</p>
+            </div>
+            <div class="w-full max-w-xs space-y-4">
+                <button data-target="memorize-select-screen" class="main-nav-btn w-full bg-sky-600 text-white font-bold py-4 px-4 rounded-lg shadow-md hover:bg-sky-700 transition-transform transform hover:scale-105 active:scale-100">암기하기</button>
+                <button data-target="test-select-screen" class="main-nav-btn w-full bg-emerald-500 text-white font-bold py-4 px-4 rounded-lg shadow-md hover:bg-emerald-600 transition-transform transform hover:scale-105 active:scale-100">테스트</button>
+            </div>
+        </div>
+
+        <!-- 암기: 레벨 선택 화면 -->
+        <div id="memorize-select-screen" class="screen flex-col p-4 min-h-screen">
+            <header class="flex items-center mb-4 sticky top-0 bg-white py-2 z-10">
+                <button class="back-btn p-2 rounded-full hover:bg-slate-100" data-target="main-screen"><svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7" /></svg></button>
+                <h2 class="text-xl font-bold mx-auto pr-8">암기하기</h2>
+            </header>
+            <div class="space-y-2">
+                <!-- N5, N4, N3, 오답노트 아코디언 UI -->
+            </div>
+        </div>
+        
+        <!-- 암기: 단어 목록 화면 -->
+        <div id="memorize-word-list-screen" class="screen flex-col min-h-screen">
+            <header class="flex items-center p-4 sticky top-0 bg-white shadow-sm z-10">
+                <button class="back-btn p-2 rounded-full hover:bg-slate-100" data-target="memorize-select-screen"><svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7" /></svg></button>
+                <h2 id="word-list-title" class="text-xl font-bold mx-auto pr-8"></h2>
+            </header>
+            <div class="flex-grow p-4 space-y-2" id="memorize-list-container">
+                <!-- 단어 목록 동적 생성 -->
+            </div>
+        </div>
+
+        <!-- 테스트: 레벨 선택 화면 -->
+        <div id="test-select-screen" class="screen flex-col p-4 min-h-screen">
+            <header class="flex items-center mb-4 sticky top-0 bg-white py-2">
+                <button class="back-btn p-2 rounded-full hover:bg-slate-100" data-target="main-screen"><svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7" /></svg></button>
+                <h2 class="text-xl font-bold mx-auto pr-8">테스트 레벨 선택</h2>
+            </header>
+            <div id="test-level-grid" class="grid grid-cols-2 gap-4 text-center">
+                <!-- N5, N4, N3, 오답노트 버튼 동적 생성 -->
+            </div>
+        </div>
+
+        <!-- 테스트: 범위 선택 화면 -->
+        <div id="test-range-select-screen" class="screen flex-col p-4 min-h-screen">
+             <header class="flex items-center mb-4 sticky top-0 bg-white py-2">
+                <button class="back-btn p-2 rounded-full hover:bg-slate-100" data-target="test-select-screen"><svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7" /></svg></button>
+                <h2 id="test-range-title" class="text-xl font-bold mx-auto pr-8">테스트 범위 설정</h2>
+            </header>
+            <div class="flex-grow flex flex-col justify-center items-center px-4 space-y-6">
+                <div class="w-full">
+                    <label id="start-range-label" for="start-range" class="block font-medium mb-1">시작 일차</label>
+                    <input type="number" id="start-range" value="1" class="w-full p-3 border border-slate-300 rounded-lg focus:ring-2 focus:ring-sky-500 focus:border-sky-500">
+                </div>
+                <div class="w-full">
+                    <label id="end-range-label" for="end-range" class="block font-medium mb-1">끝 일차</label>
+                    <input type="number" id="end-range" value="1" class="w-full p-3 border border-slate-300 rounded-lg focus:ring-2 focus:ring-sky-500 focus:border-sky-500">
+                </div>
+                <button id="start-test-btn" class="w-full bg-emerald-500 text-white font-bold py-4 px-4 rounded-lg shadow-md hover:bg-emerald-600 transition-transform transform hover:scale-105 active:scale-100">테스트 시작</button>
+            </div>
+        </div>
+
+        <!-- 테스트: 단어 시험 화면 -->
+        <div id="test-word-list-screen" class="screen flex-col min-h-screen">
+            <header class="flex items-center p-4 sticky top-0 bg-white shadow-sm z-10">
+                <button class="back-btn p-2 rounded-full hover:bg-slate-100" data-target="test-range-select-screen"><svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7" /></svg></button>
+                <h2 id="test-list-title" class="text-xl font-bold mx-auto pr-8">테스트</h2>
+            </header>
+            <div class="p-4 w-full">
+                <p class="text-center text-slate-500 bg-slate-100 p-3 rounded-lg mb-4">단어를 클릭해서 정답 확인, 밀어서 오답노트 추가</p>
+                <div id="test-list-container" class="space-y-2">
+                    <!-- 테스트 단어 동적 생성 -->
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+    document.addEventListener('DOMContentLoaded', () => {
+        // --- 상태 변수 ---
+        const state = {
+            words: { n5: [], n4: [], n3: [] },
+            wrongWords: [],
+            currentTestLevel: null,
+        };
+        const WRONG_WORDS_KEY = 'jlptWrongWords';
+        const DAYS_PER_LEVEL = 30;
+        const WRONG_NOTE_CHUNK_SIZE = 20;
+        const LEVELS = ['n5', 'n4', 'n3'];
+
+        // --- DOM 요소 ---
+        const screens = document.querySelectorAll('.screen');
+        const mainNavBtns = document.querySelectorAll('.main-nav-btn');
+        const backBtns = document.querySelectorAll('.back-btn');
+        const memorizeSelectContainer = document.querySelector('#memorize-select-screen .space-y-2');
+        const testLevelGrid = document.getElementById('test-level-grid');
+        let currentTestLevel = '';
+
+        // --- 데이터 로딩 및 초기화 ---
+        async function loadAllData() {
+            try {
+                const fetchPromises = LEVELS.map(level => fetch(`${level.toUpperCase()}.csv`).then(res => res.text()));
+                const [n5CSV, n4CSV, n3CSV] = await Promise.all(fetchPromises);
+                
+                state.words.n5 = parseCSV(n5CSV, 'N5');
+                state.words.n4 = parseCSV(n4CSV, 'N4');
+                state.words.n3 = parseCSV(n3CSV, 'N3');
+
+                loadWrongWords();
+                initializeApp();
+            } catch (error) {
+                console.error("단어장 파일을 불러오는 데 실패했습니다:", error);
+                document.getElementById('loading-screen').innerHTML = `<h1 class="text-xl font-bold text-red-700">오류</h1><p class="text-slate-500 mt-2">CSV 파일을 불러올 수 없습니다. 파일 이름을 확인해주세요.</p>`;
+            }
+        }
+
+        function parseCSV(text, level) {
+            return text.trim().replace(/\r/g, '').split('\n').slice(1).map(line => {
+                const [day, , meaning, notation] = line.split(',');
+                return {
+                    day: day.replace('일차', '').trim(),
+                    meaning: meaning.replace(/"/g, ''),
+                    notation: notation.replace(/"/g, ''),
+                    level: level,
+                    id: `${level}-${meaning}`
+                };
+            }).filter(w => w.day && w.meaning && w.notation);
+        }
+        
+        function initializeApp() {
+            setupEventListeners();
+            buildMemorizeScreen();
+            buildTestSelectScreen();
+            showScreen('main-screen');
+        }
+        
+        loadAllData();
+
+        // --- 화면 & UI 빌더 ---
+        function showScreen(screenId) {
+            screens.forEach(s => s.classList.remove('active'));
+            document.getElementById(screenId).classList.add('active');
+            window.scrollTo(0, 0);
+        }
+
+        function buildMemorizeScreen() {
+            const levelsHtml = LEVELS.map(level => `
+                <details class="bg-slate-50 rounded-lg">
+                    <summary class="flex justify-between items-center p-4 font-semibold cursor-pointer">
+                        ${level.toUpperCase()} 단어
+                        <svg class="icon h-5 w-5" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7" /></svg>
+                    </summary>
+                    <div class="grid grid-cols-4 sm:grid-cols-5 gap-3 p-4 border-t border-slate-200">
+                        ${Array.from({ length: DAYS_PER_LEVEL }, (_, i) => `<button data-level="${level}" data-day="${i + 1}" class="memorize-day-btn p-3 border rounded-lg shadow-sm bg-white hover:bg-sky-100">${i + 1}일차</button>`).join('')}
+                    </div>
+                </details>
+            `).join('');
+
+            const wrongNoteHtml = `
+                <details class="bg-slate-50 rounded-lg">
+                    <summary class="flex justify-between items-center p-4 font-semibold cursor-pointer">
+                        오답노트 (${state.wrongWords.length}개)
+                        <svg class="icon h-5 w-5" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7" /></svg>
+                    </summary>
+                    <div id="wrong-note-chunks" class="grid grid-cols-3 sm:grid-cols-4 gap-3 p-4 border-t border-slate-200">
+                        ${buildWrongNoteChunks()}
+                    </div>
+                </details>
+            `;
+            memorizeSelectContainer.innerHTML = levelsHtml + wrongNoteHtml;
+        }
+
+        function buildWrongNoteChunks() {
+            if (state.wrongWords.length === 0) return '<p class="col-span-full text-center text-slate-500">오답노트가 비어있습니다.</p>';
+            const chunkCount = Math.ceil(state.wrongWords.length / WRONG_NOTE_CHUNK_SIZE);
+            return Array.from({ length: chunkCount }, (_, i) => {
+                const start = i * WRONG_NOTE_CHUNK_SIZE;
+                const end = start + WRONG_NOTE_CHUNK_SIZE - 1;
+                return `<button data-start="${start}" data-end="${end}" class="memorize-wrong-btn p-3 border rounded-lg shadow-sm bg-white hover:bg-amber-100">${start + 1}-${Math.min(end + 1, state.wrongWords.length)}</button>`;
+            }).join('');
+        }
+        
+        function buildTestSelectScreen() {
+             const levels = [...LEVELS, 'wrong-note'];
+             testLevelGrid.innerHTML = levels.map(level => `
+                <button data-level="${level}" class="test-level-btn p-6 border rounded-lg shadow-sm font-bold text-lg ${level === 'wrong-note' ? 'bg-amber-400' : 'bg-sky-400'} text-white hover:opacity-90">
+                    ${level === 'wrong-note' ? '오답노트' : level.toUpperCase()}
+                </button>
+            `).join('');
+        }
+
+        // --- 오답노트 관리 ---
+        function loadWrongWords() {
+            const stored = localStorage.getItem(WRONG_WORDS_KEY);
+            state.wrongWords = stored ? JSON.parse(stored) : [];
+        }
+
+        function saveWrongWords() {
+            localStorage.setItem(WRONG_WORDS_KEY, JSON.stringify(state.wrongWords));
+            buildMemorizeScreen(); // Re-render to update count and chunks
+        }
+
+        function addWrongWord(word) {
+            if (!state.wrongWords.some(w => w.id === word.id)) {
+                state.wrongWords.push(word);
+                saveWrongWords();
+            }
+        }
+        
+        // --- 이벤트 핸들러 ---
+        function setupEventListeners() {
+            mainNavBtns.forEach(btn => btn.addEventListener('click', () => showScreen(btn.dataset.target)));
+            backBtns.forEach(btn => btn.addEventListener('click', e => {
+                const target = e.currentTarget.dataset.target;
+                if(target === 'test-select-screen') buildTestSelectScreen(); // Refresh test options
+                showScreen(target);
+            }));
+
+            memorizeSelectContainer.addEventListener('click', e => {
+                if (e.target.matches('.memorize-day-btn')) {
+                    const { level, day } = e.target.dataset;
+                    showMemorizeWords(level, day);
+                }
+                if (e.target.matches('.memorize-wrong-btn')) {
+                    const { start, end } = e.target.dataset;
+                    showMemorizeWords('wrong-note', null, parseInt(start), parseInt(end));
+                }
+            });
+
+            testLevelGrid.addEventListener('click', e => {
+                if(e.target.matches('.test-level-btn')) {
+                    currentTestLevel = e.target.dataset.level;
+                    setupTestRangeScreen(currentTestLevel);
+                    showScreen('test-range-select-screen');
+                }
+            });
+            
+            document.getElementById('start-test-btn').addEventListener('click', handleStartTest);
+        }
+
+        function showMemorizeWords(level, day, start, end) {
+            const container = document.getElementById('memorize-list-container');
+            let wordsToShow;
+            let title;
+
+            if (level === 'wrong-note') {
+                title = `오답노트 (${start + 1} - ${Math.min(end + 1, state.wrongWords.length)})`;
+                wordsToShow = state.wrongWords.slice(start, end + 1);
+            } else {
+                title = `${level.toUpperCase()} ${day}일차 단어`;
+                wordsToShow = state.words[level].filter(w => w.day == day);
+            }
+
+            document.getElementById('word-list-title').textContent = title;
+            container.innerHTML = wordsToShow.length ? wordsToShow.map(word => `
+                <div class="word-item flex justify-between items-center p-4 bg-white border rounded-lg shadow-sm" data-word-id="${word.id}">
+                    <span class="text-slate-700">${word.meaning}</span>
+                    <span class="text-sky-800 font-medium">${word.notation}</span>
+                </div>
+            `).join('') : '<p class="text-center text-slate-500">표시할 단어가 없습니다.</p>';
+
+            if (level !== 'wrong-note') {
+                container.querySelectorAll('.word-item').forEach(el => {
+                    const word = wordsToShow.find(w => w.id === el.dataset.wordId);
+                    if (word) addSwipeListener(el, word);
+                });
+            }
+            showScreen('memorize-word-list-screen');
+        }
+
+        function setupTestRangeScreen(level) {
+            const startLabel = document.getElementById('start-range-label');
+            const endLabel = document.getElementById('end-range-label');
+            const startInput = document.getElementById('start-range');
+            const endInput = document.getElementById('end-range');
+            
+            if (level === 'wrong-note') {
+                document.getElementById('test-range-title').textContent = '오답노트 테스트 범위';
+                startLabel.textContent = '시작 번호';
+                endLabel.textContent = '끝 번호';
+                startInput.value = 1;
+                endInput.value = Math.min(WRONG_NOTE_CHUNK_SIZE, state.wrongWords.length) || 1;
+            } else {
+                document.getElementById('test-range-title').textContent = `${level.toUpperCase()} 테스트 범위`;
+                startLabel.textContent = '시작 일차';
+                endLabel.textContent = '끝 일차';
+                startInput.value = 1;
+                endInput.value = 1;
+            }
+        }
+
+        function handleStartTest() {
+            const start = parseInt(document.getElementById('start-range').value);
+            const end = parseInt(document.getElementById('end-range').value);
+            
+            let wordsToTest = [];
+            let title = `테스트`;
+            
+            if (currentTestLevel === 'wrong-note') {
+                title = `오답노트 테스트 (${start}-${end})`;
+                wordsToTest = state.wrongWords.slice(start - 1, end);
+            } else {
+                title = `${currentTestLevel.toUpperCase()} 테스트 (${start}-${end}일차)`;
+                for (let i = start; i <= end; i++) {
+                    wordsToTest.push(...state.words[currentTestLevel].filter(w => w.day == i));
+                }
+            }
+
+            // Shuffle
+            for (let i = wordsToTest.length - 1; i > 0; i--) {
+                const j = Math.floor(Math.random() * (i + 1));
+                [wordsToTest[i], wordsToTest[j]] = [wordsToTest[j], wordsToTest[i]];
+            }
+
+            displayTestWords(wordsToTest, title, currentTestLevel === 'wrong-note');
+        }
+
+        function displayTestWords(words, title, isWrongNoteTest) {
+            const container = document.getElementById('test-list-container');
+            document.getElementById('test-list-title').textContent = title;
+            container.innerHTML = words.length ? words.map(word => `
+                <div class="word-item test-item-content p-4 bg-white border rounded-lg shadow-sm cursor-pointer" data-word-id="${word.id}">
+                    <span class="text-slate-700">${word.meaning}</span>
+                    <span class="notation text-sky-800 font-medium">${word.notation}</span>
+                    <span class="placeholder text-slate-400">[클릭하여 정답 확인]</span>
+                </div>
+            `).join('') : '<p class="text-center text-slate-500">테스트할 단어가 없습니다.</p>';
+
+            container.querySelectorAll('.test-item-content').forEach(el => {
+                el.addEventListener('click', () => el.classList.toggle('revealed'));
+                
+                if (!isWrongNoteTest) {
+                    const word = words.find(w => w.id === el.dataset.wordId);
+                    if (word) addSwipeListener(el, word);
+                }
+            });
+            showScreen('test-word-list-screen');
+        }
+
+        // --- 스와이프 로직 ---
+        function addSwipeListener(element, word) {
+            let touchstartX = 0;
+            element.addEventListener('touchstart', e => {
+                touchstartX = e.changedTouches[0].screenX;
+            }, { passive: true });
+            
+            element.addEventListener('touchmove', e => {
+                if (touchstartX === 0) return;
+                let deltaX = e.changedTouches[0].screenX - touchstartX;
+                if (deltaX < -50) { // Swipe left
+                    element.classList.add('swiped');
+                    element.style.backgroundColor = '#fed7aa'; // orange-200
+                    addWrongWord(word);
+                    touchstartX = 0; // Prevent re-triggering
+
+                    setTimeout(() => { element.classList.remove('swiped'); }, 0);
+                }
+            }, { passive: true });
+
+            element.addEventListener('touchend', () => { touchstartX = 0; });
+        }
+    });
+    </script>
+</body>
+</html>
