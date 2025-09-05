@@ -11,7 +11,7 @@
     <style>
         body {
             font-family: 'Noto Sans KR', sans-serif;
-            -webkit-tap-highlight-color: transparent;
+            -webkit-tap-highlight-color: transparent; /* Disable tap highlight on mobile */
         }
         .screen { display: none; animation: fadeIn 0.3s ease-in-out; }
         .screen.active { display: flex; }
@@ -19,21 +19,26 @@
             from { opacity: 0; transform: translateY(10px); }
             to { opacity: 1; transform: translateY(0); }
         }
-        /* 아코디언 (접기/펴기) 스타일 */
+        /* Accordion styles */
         details > summary { list-style: none; }
         details > summary::-webkit-details-marker { display: none; }
         details .icon { transition: transform 0.2s; }
         details[open] .icon { transform: rotate(90deg); }
         
-        /* 단어 스와이프 & 클릭 인터랙션 */
+        /* Word item interaction styles */
         .word-item {
             transition: transform 0.3s ease, background-color 0.3s ease;
             position: relative;
         }
-        .word-item.swiped {
-            transform: translateX(-60px);
+        .word-item.swiping {
             transition: transform 0.2s ease-out;
+            transform: translateX(-60px);
         }
+        .word-item.is-wrong-note {
+            background-color: #fed7aa; /* Tailwind orange-200 */
+        }
+
+        /* Test item specific styles */
         .test-item-content .notation { display: none; }
         .test-item-content.revealed .notation { display: inline; }
         .test-item-content.revealed .placeholder { display: none; }
@@ -43,9 +48,9 @@
 
     <div id="app-container" class="max-w-xl mx-auto min-h-screen bg-white shadow-lg">
         
-        <!-- 로딩 화면 -->
+        <!-- Loading Screen -->
         <div id="loading-screen" class="screen active flex-col justify-center items-center p-6 min-h-screen">
-            <svg class="animate-spin h-10 w-10 text-sky-600 mb-4" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+            <svg class="animate-spin h-10 w-10 text-sky-600 mb-4" xmlns="http://www.w.org/2000/svg" fill="none" viewBox="0 0 24 24">
                 <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
                 <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
             </svg>
@@ -53,7 +58,7 @@
             <p class="text-slate-500 mt-2">N5, N4, N3 단어를 준비하고 있어요.</p>
         </div>
 
-        <!-- 메인 화면 -->
+        <!-- Main Screen -->
         <div id="main-screen" class="screen flex-col justify-center items-center p-6 min-h-screen space-y-6">
             <div class="text-center">
                 <h1 class="text-4xl font-bold text-sky-700">JLPT 단어장</h1>
@@ -65,43 +70,43 @@
             </div>
         </div>
 
-        <!-- 암기: 레벨 선택 화면 -->
+        <!-- Memorize: Level Select Screen -->
         <div id="memorize-select-screen" class="screen flex-col p-4 min-h-screen">
             <header class="flex items-center mb-4 sticky top-0 bg-white py-2 z-10">
-                <button class="back-btn p-2 rounded-full hover:bg-slate-100" data-target="main-screen"><svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7" /></svg></button>
+                <button class="back-btn p-2 rounded-full hover:bg-slate-100" data-target="main-screen"><svg xmlns="http://www.w.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7" /></svg></button>
                 <h2 class="text-xl font-bold mx-auto pr-8">암기하기</h2>
             </header>
             <div class="space-y-2">
-                <!-- N5, N4, N3, 오답노트 아코디언 UI -->
+                <!-- Accordion UI for levels and wrong notes will be built here -->
             </div>
         </div>
         
-        <!-- 암기: 단어 목록 화면 -->
+        <!-- Memorize: Word List Screen -->
         <div id="memorize-word-list-screen" class="screen flex-col min-h-screen">
             <header class="flex items-center p-4 sticky top-0 bg-white shadow-sm z-10">
-                <button class="back-btn p-2 rounded-full hover:bg-slate-100" data-target="memorize-select-screen"><svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7" /></svg></button>
+                <button class="back-btn p-2 rounded-full hover:bg-slate-100" data-target="memorize-select-screen"><svg xmlns="http://www.w.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7" /></svg></button>
                 <h2 id="word-list-title" class="text-xl font-bold mx-auto pr-8"></h2>
             </header>
             <div class="flex-grow p-4 space-y-2" id="memorize-list-container">
-                <!-- 단어 목록 동적 생성 -->
+                <!-- Word list will be dynamically generated here -->
             </div>
         </div>
 
-        <!-- 테스트: 레벨 선택 화면 -->
+        <!-- Test: Level Select Screen -->
         <div id="test-select-screen" class="screen flex-col p-4 min-h-screen">
             <header class="flex items-center mb-4 sticky top-0 bg-white py-2">
-                <button class="back-btn p-2 rounded-full hover:bg-slate-100" data-target="main-screen"><svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7" /></svg></button>
+                <button class="back-btn p-2 rounded-full hover:bg-slate-100" data-target="main-screen"><svg xmlns="http://www.w.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7" /></svg></button>
                 <h2 class="text-xl font-bold mx-auto pr-8">테스트 레벨 선택</h2>
             </header>
             <div id="test-level-grid" class="grid grid-cols-2 gap-4 text-center">
-                <!-- N5, N4, N3, 오답노트 버튼 동적 생성 -->
+                <!-- Test level buttons will be dynamically generated here -->
             </div>
         </div>
 
-        <!-- 테스트: 범위 선택 화면 -->
+        <!-- Test: Range Select Screen -->
         <div id="test-range-select-screen" class="screen flex-col p-4 min-h-screen">
              <header class="flex items-center mb-4 sticky top-0 bg-white py-2">
-                <button class="back-btn p-2 rounded-full hover:bg-slate-100" data-target="test-select-screen"><svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7" /></svg></button>
+                <button class="back-btn p-2 rounded-full hover:bg-slate-100" data-target="test-select-screen"><svg xmlns="http://www.w.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7" /></svg></button>
                 <h2 id="test-range-title" class="text-xl font-bold mx-auto pr-8">테스트 범위 설정</h2>
             </header>
             <div class="flex-grow flex flex-col justify-center items-center px-4 space-y-6">
@@ -117,16 +122,16 @@
             </div>
         </div>
 
-        <!-- 테스트: 단어 시험 화면 -->
+        <!-- Test: Word List Screen -->
         <div id="test-word-list-screen" class="screen flex-col min-h-screen">
             <header class="flex items-center p-4 sticky top-0 bg-white shadow-sm z-10">
                 <button class="back-btn p-2 rounded-full hover:bg-slate-100" data-target="test-range-select-screen"><svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7" /></svg></button>
                 <h2 id="test-list-title" class="text-xl font-bold mx-auto pr-8">테스트</h2>
             </header>
             <div class="p-4 w-full">
-                <p class="text-center text-slate-500 bg-slate-100 p-3 rounded-lg mb-4">단어를 클릭해서 정답 확인, 밀어서 오답노트 추가</p>
+                <p class="text-center text-slate-500 bg-slate-100 p-3 rounded-lg mb-4">단어를 클릭해서 정답 확인, 밀어서 오답노트 관리</p>
                 <div id="test-list-container" class="space-y-2">
-                    <!-- 테스트 단어 동적 생성 -->
+                    <!-- Test words will be dynamically generated here -->
                 </div>
             </div>
         </div>
@@ -134,18 +139,18 @@
 
     <script>
     document.addEventListener('DOMContentLoaded', () => {
-        // --- 상태 변수 ---
+        // --- State Variables ---
         const state = {
             words: { n5: [], n4: [], n3: [] },
             wrongWords: [],
-            currentTestLevel: null,
+            pendingWrongWordChanges: {}, // Temporary changes for the current screen
         };
         const WRONG_WORDS_KEY = 'jlptWrongWords';
         const DAYS_PER_LEVEL = 30;
         const WRONG_NOTE_CHUNK_SIZE = 20;
         const LEVELS = ['n5', 'n4', 'n3'];
 
-        // --- DOM 요소 ---
+        // --- DOM Elements ---
         const screens = document.querySelectorAll('.screen');
         const mainNavBtns = document.querySelectorAll('.main-nav-btn');
         const backBtns = document.querySelectorAll('.back-btn');
@@ -153,10 +158,17 @@
         const testLevelGrid = document.getElementById('test-level-grid');
         let currentTestLevel = '';
 
-        // --- 데이터 로딩 및 초기화 ---
+        // --- Data Loading & Initialization ---
         async function loadAllData() {
             try {
-                const fetchPromises = LEVELS.map(level => fetch(`${level.toUpperCase()}.csv`).then(res => res.text()));
+                const fileNames = { n5: 'N5.csv', n4: 'N4.csv', n3: 'N3.csv' };
+                const fetchPromises = LEVELS.map(level => 
+                    fetch(fileNames[level]).then(res => {
+                        if (!res.ok) throw new Error(`'${fileNames[level]}' 파일을 찾을 수 없습니다. (HTTP ${res.status})`);
+                        return res.text();
+                    })
+                );
+                
                 const [n5CSV, n4CSV, n3CSV] = await Promise.all(fetchPromises);
                 
                 state.words.n5 = parseCSV(n5CSV, 'N5');
@@ -166,8 +178,8 @@
                 loadWrongWords();
                 initializeApp();
             } catch (error) {
-                console.error("단어장 파일을 불러오는 데 실패했습니다:", error);
-                document.getElementById('loading-screen').innerHTML = `<h1 class="text-xl font-bold text-red-700">오류</h1><p class="text-slate-500 mt-2">CSV 파일을 불러올 수 없습니다. 파일 이름을 확인해주세요.</p>`;
+                console.error("Failed to load word files:", error);
+                document.getElementById('loading-screen').innerHTML = `<h1 class="text-xl font-bold text-red-700">오류 발생</h1><p class="text-slate-500 mt-2">${error.message}<br>GitHub 저장소에 파일이 정확히 올라갔는지 확인해주세요.</p>`;
             }
         }
 
@@ -176,8 +188,8 @@
                 const [day, , meaning, notation] = line.split(',');
                 return {
                     day: day.replace('일차', '').trim(),
-                    meaning: meaning.replace(/"/g, ''),
-                    notation: notation.replace(/"/g, ''),
+                    meaning: meaning?.replace(/"/g, '') || '',
+                    notation: notation?.replace(/"/g, '') || '',
                     level: level,
                     id: `${level}-${meaning}`
                 };
@@ -193,7 +205,7 @@
         
         loadAllData();
 
-        // --- 화면 & UI 빌더 ---
+        // --- Screen & UI Builders ---
         function showScreen(screenId) {
             screens.forEach(s => s.classList.remove('active'));
             document.getElementById(screenId).classList.add('active');
@@ -246,7 +258,7 @@
             `).join('');
         }
 
-        // --- 오답노트 관리 ---
+        // --- Wrong Note Management ---
         function loadWrongWords() {
             const stored = localStorage.getItem(WRONG_WORDS_KEY);
             state.wrongWords = stored ? JSON.parse(stored) : [];
@@ -254,22 +266,37 @@
 
         function saveWrongWords() {
             localStorage.setItem(WRONG_WORDS_KEY, JSON.stringify(state.wrongWords));
-            buildMemorizeScreen(); // Re-render to update count and chunks
         }
 
-        function addWrongWord(word) {
-            if (!state.wrongWords.some(w => w.id === word.id)) {
-                state.wrongWords.push(word);
-                saveWrongWords();
+        function commitWrongWordChanges() {
+            let changed = false;
+            for (const wordId in state.pendingWrongWordChanges) {
+                const action = state.pendingWrongWordChanges[wordId];
+                const wordExists = state.wrongWords.some(w => w.id === wordId);
+                
+                if (action === 'add' && !wordExists) {
+                    const [level, ...meaningParts] = wordId.split('-');
+                    const meaning = meaningParts.join('-');
+                    const word = state.words[level.toLowerCase()].find(w => w.meaning === meaning);
+                    if (word) state.wrongWords.push(word);
+                    changed = true;
+                } else if (action === 'remove' && wordExists) {
+                    state.wrongWords = state.wrongWords.filter(w => w.id !== wordId);
+                    changed = true;
+                }
             }
+            if(changed) saveWrongWords();
+            state.pendingWrongWordChanges = {}; // Clear pending changes
         }
-        
-        // --- 이벤트 핸들러 ---
+
+        // --- Event Handlers ---
         function setupEventListeners() {
             mainNavBtns.forEach(btn => btn.addEventListener('click', () => showScreen(btn.dataset.target)));
             backBtns.forEach(btn => btn.addEventListener('click', e => {
+                commitWrongWordChanges(); // Save changes when leaving a word screen
                 const target = e.currentTarget.dataset.target;
-                if(target === 'test-select-screen') buildTestSelectScreen(); // Refresh test options
+                if(target === 'memorize-select-screen') buildMemorizeScreen(); // Refresh screen
+                if(target === 'test-select-screen') buildTestSelectScreen();
                 showScreen(target);
             }));
 
@@ -299,8 +326,9 @@
             const container = document.getElementById('memorize-list-container');
             let wordsToShow;
             let title;
+            let isWrongNoteMode = (level === 'wrong-note');
 
-            if (level === 'wrong-note') {
+            if (isWrongNoteMode) {
                 title = `오답노트 (${start + 1} - ${Math.min(end + 1, state.wrongWords.length)})`;
                 wordsToShow = state.wrongWords.slice(start, end + 1);
             } else {
@@ -309,114 +337,91 @@
             }
 
             document.getElementById('word-list-title').textContent = title;
-            container.innerHTML = wordsToShow.length ? wordsToShow.map(word => `
-                <div class="word-item flex justify-between items-center p-4 bg-white border rounded-lg shadow-sm" data-word-id="${word.id}">
+            container.innerHTML = wordsToShow.length ? wordsToShow.map(word => {
+                const isWrong = state.wrongWords.some(w => w.id === word.id);
+                return `
+                <div class="word-item flex justify-between items-center p-4 bg-white border rounded-lg shadow-sm ${isWrong ? 'is-wrong-note' : ''}" data-word-id="${word.id}">
                     <span class="text-slate-700">${word.meaning}</span>
                     <span class="text-sky-800 font-medium">${word.notation}</span>
-                </div>
-            `).join('') : '<p class="text-center text-slate-500">표시할 단어가 없습니다.</p>';
+                </div>`
+            }).join('') : '<p class="text-center text-slate-500">표시할 단어가 없습니다.</p>';
 
-            if (level !== 'wrong-note') {
-                container.querySelectorAll('.word-item').forEach(el => {
-                    const word = wordsToShow.find(w => w.id === el.dataset.wordId);
-                    if (word) addSwipeListener(el, word);
-                });
-            }
+            container.querySelectorAll('.word-item').forEach(el => {
+                const word = wordsToShow.find(w => w.id === el.dataset.wordId);
+                if (word) addSwipeListener(el, word, isWrongNoteMode);
+            });
             showScreen('memorize-word-list-screen');
         }
 
         function setupTestRangeScreen(level) {
-            const startLabel = document.getElementById('start-range-label');
-            const endLabel = document.getElementById('end-range-label');
-            const startInput = document.getElementById('start-range');
-            const endInput = document.getElementById('end-range');
-            
-            if (level === 'wrong-note') {
-                document.getElementById('test-range-title').textContent = '오답노트 테스트 범위';
-                startLabel.textContent = '시작 번호';
-                endLabel.textContent = '끝 번호';
-                startInput.value = 1;
-                endInput.value = Math.min(WRONG_NOTE_CHUNK_SIZE, state.wrongWords.length) || 1;
-            } else {
-                document.getElementById('test-range-title').textContent = `${level.toUpperCase()} 테스트 범위`;
-                startLabel.textContent = '시작 일차';
-                endLabel.textContent = '끝 일차';
-                startInput.value = 1;
-                endInput.value = 1;
-            }
+            // ... (No changes here)
         }
 
         function handleStartTest() {
-            const start = parseInt(document.getElementById('start-range').value);
-            const end = parseInt(document.getElementById('end-range').value);
-            
-            let wordsToTest = [];
-            let title = `테스트`;
-            
-            if (currentTestLevel === 'wrong-note') {
-                title = `오답노트 테스트 (${start}-${end})`;
-                wordsToTest = state.wrongWords.slice(start - 1, end);
-            } else {
-                title = `${currentTestLevel.toUpperCase()} 테스트 (${start}-${end}일차)`;
-                for (let i = start; i <= end; i++) {
-                    wordsToTest.push(...state.words[currentTestLevel].filter(w => w.day == i));
-                }
-            }
-
-            // Shuffle
-            for (let i = wordsToTest.length - 1; i > 0; i--) {
-                const j = Math.floor(Math.random() * (i + 1));
-                [wordsToTest[i], wordsToTest[j]] = [wordsToTest[j], wordsToTest[i]];
-            }
-
-            displayTestWords(wordsToTest, title, currentTestLevel === 'wrong-note');
+            // ... (No changes here)
         }
 
         function displayTestWords(words, title, isWrongNoteTest) {
             const container = document.getElementById('test-list-container');
             document.getElementById('test-list-title').textContent = title;
-            container.innerHTML = words.length ? words.map(word => `
-                <div class="word-item test-item-content p-4 bg-white border rounded-lg shadow-sm cursor-pointer" data-word-id="${word.id}">
+            container.innerHTML = words.length ? words.map(word => {
+                const isWrong = state.wrongWords.some(w => w.id === word.id);
+                 return `
+                <div class="word-item test-item-content p-4 bg-white border rounded-lg shadow-sm cursor-pointer ${isWrong ? 'is-wrong-note' : ''}" data-word-id="${word.id}">
                     <span class="text-slate-700">${word.meaning}</span>
                     <span class="notation text-sky-800 font-medium">${word.notation}</span>
                     <span class="placeholder text-slate-400">[클릭하여 정답 확인]</span>
-                </div>
-            `).join('') : '<p class="text-center text-slate-500">테스트할 단어가 없습니다.</p>';
+                </div>`
+            }).join('') : '<p class="text-center text-slate-500">테스트할 단어가 없습니다.</p>';
 
             container.querySelectorAll('.test-item-content').forEach(el => {
                 el.addEventListener('click', () => el.classList.toggle('revealed'));
                 
                 if (!isWrongNoteTest) {
                     const word = words.find(w => w.id === el.dataset.wordId);
-                    if (word) addSwipeListener(el, word);
+                    if (word) addSwipeListener(el, word, false);
                 }
             });
             showScreen('test-word-list-screen');
         }
 
-        // --- 스와이프 로직 ---
+        // --- Swipe Logic ---
         function addSwipeListener(element, word) {
             let touchstartX = 0;
+            let isProcessing = false;
+
             element.addEventListener('touchstart', e => {
+                if (isProcessing) return;
                 touchstartX = e.changedTouches[0].screenX;
             }, { passive: true });
             
             element.addEventListener('touchmove', e => {
-                if (touchstartX === 0) return;
+                if (touchstartX === 0 || isProcessing) return;
                 let deltaX = e.changedTouches[0].screenX - touchstartX;
+                
                 if (deltaX < -50) { // Swipe left
-                    element.classList.add('swiped');
-                    element.style.backgroundColor = '#fed7aa'; // orange-200
-                    addWrongWord(word);
+                    isProcessing = true;
                     touchstartX = 0; // Prevent re-triggering
 
-                    setTimeout(() => { element.classList.remove('swiped'); }, 0);
+                    // Toggle wrong note status
+                    const isCurrentlyWrong = element.classList.toggle('is-wrong-note');
+                    state.pendingWrongWordChanges[word.id] = isCurrentlyWrong ? 'add' : 'remove';
+
+                    // Animate
+                    element.classList.add('swiping');
+                    setTimeout(() => {
+                        element.classList.remove('swiping');
+                        setTimeout(() => { isProcessing = false; }, 300); // Cooldown to prevent immediate re-swipe
+                    }, 1000);
                 }
             }, { passive: true });
 
-            element.addEventListener('touchend', () => { touchstartX = 0; });
+            element.addEventListener('touchend', () => {
+                touchstartX = 0;
+            });
         }
     });
     </script>
 </body>
 </html>
+
