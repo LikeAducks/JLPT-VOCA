@@ -145,7 +145,7 @@
         // --- State Variables ---
         const state = {
             words: { n5: [], n4: [], n3: [] },
-            wrongWords: [],
+            wrongWords: [], // This is the single source of truth for all wrong words.
             pendingWrongWordChanges: {}, // Temporary changes for the current screen
         };
         const WRONG_WORDS_KEY = 'jlptWrongWords';
@@ -272,6 +272,10 @@
         }
 
         function commitWrongWordChanges() {
+            // This function is the single point of truth for saving wrong word changes.
+            // It's called when leaving a word screen to make pending changes permanent.
+            // This ensures that changes made in the 'Memorize' screen are reflected
+            // in the 'Test' screen and vice-versa, as they share the same data source.
             let changed = false;
             for (const wordId in state.pendingWrongWordChanges) {
                 const action = state.pendingWrongWordChanges[wordId];
@@ -290,17 +294,22 @@
                 }
             }
             if(changed) saveWrongWords();
-            state.pendingWrongWordChanges = {}; // Clear pending changes
+            state.pendingWrongWordChanges = {}; // Clear pending changes after committing.
         }
 
         // --- Event Handlers ---
         function setupEventListeners() {
             mainNavBtns.forEach(btn => btn.addEventListener('click', () => showScreen(btn.dataset.target)));
+            
             backBtns.forEach(btn => btn.addEventListener('click', e => {
-                commitWrongWordChanges(); // Save changes when leaving a word screen
+                // Commit any pending adds/removals to the shared wrong note list.
+                commitWrongWordChanges(); 
                 const target = e.currentTarget.dataset.target;
-                if(target === 'memorize-select-screen') buildMemorizeScreen(); // Refresh screen
+                
+                // Refresh the selection screen to show the updated wrong note count.
+                if(target === 'memorize-select-screen') buildMemorizeScreen(); 
                 if(target === 'test-select-screen') buildTestSelectScreen();
+                
                 showScreen(target);
             }));
 
@@ -436,7 +445,7 @@
             showScreen('test-word-list-screen');
         }
 
-        // --- Swipe Logic (UPDATED) ---
+        // --- Swipe Logic ---
         function addSwipeListener(element, word) {
             let touchstartX = 0;
             let isProcessing = false;
