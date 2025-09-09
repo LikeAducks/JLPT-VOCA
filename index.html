@@ -145,8 +145,8 @@
         // --- State Variables ---
         const state = {
             words: { n5: [], n4: [], n3: [] },
-            wrongWords: [], // This is the single source of truth for all wrong words.
-            pendingWrongWordChanges: {}, // Temporary changes for the current screen
+            wrongWords: [], 
+            pendingWrongWordChanges: {}, 
         };
         const WRONG_WORDS_KEY = 'jlptWrongWords';
         const DAYS_PER_LEVEL = 30;
@@ -186,17 +186,38 @@
             }
         }
 
+        // --- UPDATED CSV Parsing function ---
         function parseCSV(text, level) {
             return text.trim().replace(/\r/g, '').split('\n').slice(1).map(line => {
-                const [day, , meaning, notation] = line.split(',');
+                if (!line) return null;
+
+                // Regex to split CSV by comma, respecting double quotes.
+                const parts = line.match(/(".*?"|[^",]+)(?=\s*,|\s*$)/g) || [];
+
+                if (parts.length < 4) {
+                    console.warn('Skipping malformed CSV line:', line);
+                    return null;
+                }
+                
+                const cleanedParts = parts.map(p => p.replace(/^"|"$/g, '').trim());
+                
+                // We need the 1st, 3rd, and 4th columns (index 0, 2, 3)
+                const day = cleanedParts[0];
+                const meaning = cleanedParts[2];
+                const notation = cleanedParts[3];
+
+                if (!day || !meaning || !notation) {
+                    return null;
+                }
+
                 return {
                     day: day.replace('일차', '').trim(),
-                    meaning: meaning?.replace(/"/g, '') || '',
-                    notation: notation?.replace(/"/g, '') || '',
+                    meaning: meaning,
+                    notation: notation,
                     level: level,
                     id: `${level}-${meaning}`
                 };
-            }).filter(w => w.day && w.meaning && w.notation);
+            }).filter(Boolean); // .filter(Boolean) removes null entries from array.
         }
         
         function initializeApp() {
@@ -272,10 +293,6 @@
         }
 
         function commitWrongWordChanges() {
-            // This function is the single point of truth for saving wrong word changes.
-            // It's called when leaving a word screen to make pending changes permanent.
-            // This ensures that changes made in the 'Memorize' screen are reflected
-            // in the 'Test' screen and vice-versa, as they share the same data source.
             let changed = false;
             for (const wordId in state.pendingWrongWordChanges) {
                 const action = state.pendingWrongWordChanges[wordId];
@@ -284,17 +301,20 @@
                 if (action === 'add' && !wordExists) {
                     const [level, ...meaningParts] = wordId.split('-');
                     const meaning = meaningParts.join('-');
+                    // Find the original word from the main dataset
                     const wordSource = state.words[level.toLowerCase()] || [];
                     const word = wordSource.find(w => w.meaning === meaning);
-                    if (word) state.wrongWords.push(word);
-                    changed = true;
+                    if (word) {
+                        state.wrongWords.push(word);
+                        changed = true;
+                    }
                 } else if (action === 'remove' && wordExists) {
                     state.wrongWords = state.wrongWords.filter(w => w.id !== wordId);
                     changed = true;
                 }
             }
             if(changed) saveWrongWords();
-            state.pendingWrongWordChanges = {}; // Clear pending changes after committing.
+            state.pendingWrongWordChanges = {};
         }
 
         // --- Event Handlers ---
@@ -302,11 +322,9 @@
             mainNavBtns.forEach(btn => btn.addEventListener('click', () => showScreen(btn.dataset.target)));
             
             backBtns.forEach(btn => btn.addEventListener('click', e => {
-                // Commit any pending adds/removals to the shared wrong note list.
                 commitWrongWordChanges(); 
                 const target = e.currentTarget.dataset.target;
                 
-                // Refresh the selection screen to show the updated wrong note count.
                 if(target === 'memorize-select-screen') buildMemorizeScreen(); 
                 if(target === 'test-select-screen') buildTestSelectScreen();
                 
@@ -414,7 +432,6 @@
                 }
             }
 
-            // Shuffle words
             for (let i = wordsToTest.length - 1; i > 0; i--) {
                 const j = Math.floor(Math.random() * (i + 1));
                 [wordsToTest[i], wordsToTest[j]] = [wordsToTest[j], wordsToTest[i]];
@@ -461,7 +478,7 @@
                 
                 if (Math.abs(deltaX) > 50) { // Swipe left or right
                     isProcessing = true;
-                    touchstartX = 0; // Prevent re-triggering
+                    touchstartX = 0;
 
                     const swipeClass = deltaX < 0 ? 'swiping' : 'swiping-right';
 
